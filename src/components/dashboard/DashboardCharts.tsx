@@ -171,6 +171,16 @@ export function GroupedBarChart({
                   fill={primaryColor}
                   opacity={isHovered ? 1 : 0.9}
                 />
+                {!isDense && d.primary > 0 ? (
+                  <text
+                    x={x1 + barW / 2}
+                    y={Math.max(12, y1 - 4)}
+                    textAnchor="middle"
+                    className="fill-slate-700 text-[9px] font-semibold"
+                  >
+                    {formatCompactBr(d.primary)}
+                  </text>
+                ) : null}
                 {hasSecondary ? (
                   <rect
                     x={x2}

@@ -204,21 +204,31 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            {SECTOR_TABS.map((tab) => (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => setSector(tab.value)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
-                  sector === tab.value
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {SECTOR_TABS.map((tab) => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => setSector(tab.value)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                    sector === tab.value
+                      ? "bg-slate-900 text-white"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {data ? (
+              <Badge variant={isSingleMonth ? "info" : "neutral"}>
+                {isSingleMonth
+                  ? `Visão Dia a Dia: ${activeMonthLabel} (${seriesLabels.length} dias)`
+                  : `Visão Mensal: Jan–Dez de ${data.selected_year}`}
+              </Badge>
+            ) : null}
           </div>
         </section>
 
@@ -432,21 +442,27 @@ export default function DashboardPage() {
 
             {/* PARTICIPAÇÃO E ANUAL ENERGIA */}
             {(sector === "all" || sector === "energia" || sector === "agua") && (
-              <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <GroupedBarChart
-                  title="Energia — Consolidado Anual (BSS Total vs CAG)"
-                  subtitle="Comparação anual em kWh"
-                  unit="kWh"
-                  primaryLabel="Energia Total"
-                  secondaryLabel="CAG Energia"
-                  primaryColor="#f59e0b"
-                  secondaryColor="#0d9488"
-                  data={data.annual_series.map((a) => ({
-                    label: String(a.year),
-                    primary: a.energia_total_kwh,
-                    secondary: a.cag_energia_kwh,
-                  }))}
-                />
+              <section
+                className={`grid grid-cols-1 gap-4 ${
+                  isSingleMonth ? "lg:grid-cols-2" : "lg:grid-cols-3"
+                }`}
+              >
+                {!isSingleMonth ? (
+                  <GroupedBarChart
+                    title="Energia — Consolidado Anual (BSS Total vs CAG)"
+                    subtitle="Comparação anual em kWh"
+                    unit="kWh"
+                    primaryLabel="Energia Total"
+                    secondaryLabel="CAG Energia"
+                    primaryColor="#f59e0b"
+                    secondaryColor="#0d9488"
+                    data={data.annual_series.map((a) => ({
+                      label: String(a.year),
+                      primary: a.energia_total_kwh,
+                      secondary: a.cag_energia_kwh,
+                    }))}
+                  />
+                ) : null}
 
                 <SectorShareBars
                   title={`Participação de Energia (${scopeLabel})`}
@@ -539,20 +555,22 @@ export default function DashboardPage() {
                   ]}
                 />
 
-                <GroupedBarChart
-                  title="Temperaturas — Média Anual por Setor (°C)"
-                  subtitle="Comparativo anual Nível Joquey vs Nível Guaíba"
-                  unit="°C"
-                  primaryLabel="Nível Joquey"
-                  secondaryLabel="Nível Guaíba"
-                  primaryColor="#0284c7"
-                  secondaryColor="#10b981"
-                  data={data.annual_series.map((a) => ({
-                    label: String(a.year),
-                    primary: a.temp_jockey_avg ?? 0,
-                    secondary: a.temp_guaiba_avg ?? 0,
-                  }))}
-                />
+                {!isSingleMonth ? (
+                  <GroupedBarChart
+                    title="Temperaturas — Média Anual por Setor (°C)"
+                    subtitle="Comparativo anual Nível Joquey vs Nível Guaíba"
+                    unit="°C"
+                    primaryLabel="Nível Joquey"
+                    secondaryLabel="Nível Guaíba"
+                    primaryColor="#0284c7"
+                    secondaryColor="#10b981"
+                    data={data.annual_series.map((a) => ({
+                      label: String(a.year),
+                      primary: a.temp_jockey_avg ?? 0,
+                      secondary: a.temp_guaiba_avg ?? 0,
+                    }))}
+                  />
+                ) : null}
               </section>
             )}
 
