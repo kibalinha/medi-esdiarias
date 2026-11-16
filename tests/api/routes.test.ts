@@ -23,6 +23,7 @@ vi.mock("next/headers", () => ({
 
 import { resetLocalDbForTests } from "@/lib/supabase/local-store";
 import { GET as getAuthMe, POST as postAuthMe } from "@/app/api/auth/me/route";
+import { GET as getBiMedicoes } from "@/app/api/bi/medicoes/route";
 import { GET as getCampoBootstrap } from "@/app/api/campo/bootstrap/route";
 import { POST as postOcrExtract } from "@/app/api/ocr/extract/route";
 import { POST as postSyncBatch } from "@/app/api/sync/batch/route";
@@ -681,5 +682,40 @@ describe("API Route Contracts & RBAC (Local Mode)", () => {
     expect(
       boot.meters.every((m: { group_slug: string }) => m.group_slug === "agua"),
     ).toBe(true);
+  });
+
+  it("GET /api/bi/medicoes enforces BI_API_KEY and returns normalized JSON and wide CSV for Power BI", async () => {
+    const prevKey = process.env.BI_API_KEY;
+    process.env.BI_API_KEY = "test_bi_secret_123";
+    try {
+      const unauthRes = await getBiMedicoes(
+        makeReq("/api/bi/medicoes?year=2026"),
+      );
+      expect(unauthRes.status).toBe(401);
+
+      const jsonRes = await getBiMedicoes(
+        makeReq("/api/bi/medicoes?api_key=test_bi_secret_123&year=2026"),
+      );
+      expect(jsonRes.status).toBe(200);
+      const rows = await jsonRes.json();
+      expect(Array.isArray(rows)).toBe(true);
+      expect(rows.length).toBeGreaterThan(0);
+      expect(rows[0]).toHaveProperty("medidor_codigo");
+      expect(rows[0]).toHaveProperty("valor_bruto");
+      expect(rows[0]).toHaveProperty("consumo_calculado");
+
+      const csvRes = await getBiMedicoes(
+        makeReq(
+          "/api/bi/medicoes?api_key=test_bi_secret_123&year=2026&mode=wide&format=csv",
+        ),
+      );
+      expect(csvRes.status).toBe(200);
+      expect(csvRes.headers.get("content-type")).toContain("text/csv");
+      const csvText = await csvRes.text();
+      expect(csvText).toContain("data,ano,mes,dia");
+    } finally {
+      if (prevKey === undefined) delete process.env.BI_API_KEY;
+      else process.env.BI_API_KEY = prevKey;
+    }
   });
 });
