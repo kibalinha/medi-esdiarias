@@ -54,7 +54,7 @@ export function GroupedBarChart({
     ...data.flatMap((d) => [d.primary, d.secondary ?? 0]),
   );
 
-  const width = 680;
+  const width = 760;
   const height = 240;
   const padLeft = 52;
   const padRight = 16;
@@ -64,6 +64,7 @@ export function GroupedBarChart({
   const plotH = height - padTop - padBottom;
   const slotW = plotW / Math.max(1, data.length);
   const hasSecondary = secondaryLabel !== undefined;
+  const isDense = data.length > 15;
 
   const ticks = [0, 0.25, 0.5, 0.75, 1];
   const hovered = hoveredIdx !== null ? data[hoveredIdx] : null;
@@ -185,7 +186,11 @@ export function GroupedBarChart({
                   x={cx}
                   y={height - 12}
                   textAnchor="middle"
-                  className="fill-slate-600 text-[10px] font-medium"
+                  className={
+                    isDense
+                      ? "fill-slate-600 text-[9px] font-medium"
+                      : "fill-slate-600 text-[10px] font-medium"
+                  }
                 >
                   {d.label}
                 </text>
@@ -246,7 +251,7 @@ export function MultiLineChart({
     allValues.length > 0 ? Math.max(minVal + 1, ...allValues) : 10;
   const span = Math.max(1, maxVal - minVal);
 
-  const width = 680;
+  const width = 760;
   const height = 240;
   const padLeft = 52;
   const padRight = 18;
@@ -255,6 +260,7 @@ export function MultiLineChart({
   const plotW = width - padLeft - padRight;
   const plotH = height - padTop - padBottom;
   const stepX = labels.length > 1 ? plotW / (labels.length - 1) : plotW;
+  const isDense = labels.length > 15;
 
   const ticks = [0, 0.25, 0.5, 0.75, 1];
 
@@ -378,7 +384,11 @@ export function MultiLineChart({
                   x={x}
                   y={height - 12}
                   textAnchor="middle"
-                  className="fill-slate-600 text-[10px] font-medium"
+                  className={
+                    isDense
+                      ? "fill-slate-600 text-[9px] font-medium"
+                      : "fill-slate-600 text-[10px] font-medium"
+                  }
                 >
                   {lbl}
                 </text>

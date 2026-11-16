@@ -335,20 +335,37 @@ export default function DashboardPage() {
                   }))}
                 />
 
-                <GroupedBarChart
-                  title="Água — Consolidado Anual por Ano"
-                  subtitle="Hidrômetro Geral vs Reuso (m³)"
-                  unit="m³"
-                  primaryLabel="Água Geral"
-                  secondaryLabel="Reuso"
-                  primaryColor="#0284c7"
-                  secondaryColor="#10b981"
-                  data={data.annual_series.map((a) => ({
-                    label: String(a.year),
-                    primary: a.agua_geral_m3,
-                    secondary: a.agua_reuso_m3,
-                  }))}
-                />
+                {isSingleMonth ? (
+                  <GroupedBarChart
+                    title={`Água Geral vs Reuso — Dia a Dia (${activeMonthLabel})`}
+                    subtitle={`Comparativo diário em ${scopeLabel} (m³)`}
+                    unit="m³"
+                    primaryLabel="Água Geral"
+                    secondaryLabel="Reuso"
+                    primaryColor="#0284c7"
+                    secondaryColor="#10b981"
+                    data={activeSeries.map((m) => ({
+                      label: m.label,
+                      primary: m.agua_geral_m3,
+                      secondary: m.agua_reuso_m3,
+                    }))}
+                  />
+                ) : (
+                  <GroupedBarChart
+                    title="Água — Consolidado Anual por Ano"
+                    subtitle="Hidrômetro Geral vs Reuso (m³)"
+                    unit="m³"
+                    primaryLabel="Água Geral"
+                    secondaryLabel="Reuso"
+                    primaryColor="#0284c7"
+                    secondaryColor="#10b981"
+                    data={data.annual_series.map((a) => ({
+                      label: String(a.year),
+                      primary: a.agua_geral_m3,
+                      secondary: a.agua_reuso_m3,
+                    }))}
+                  />
+                )}
               </section>
             )}
 
