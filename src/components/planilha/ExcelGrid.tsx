@@ -404,6 +404,13 @@ export function ExcelGrid({
     overscan: 16,
   });
 
+  React.useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+    rowVirtualizer.measure();
+  }, [tableRows.length, rowVirtualizer]);
+
   const headerGroupsLevel1 = React.useMemo(() => {
     const groups: Array<{
       id: string;

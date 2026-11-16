@@ -149,7 +149,6 @@ export default function PlanilhaPage() {
 
       const params = new URLSearchParams();
       if (year !== "all") params.set("year", year);
-      if (month !== "all") params.set("month", month);
       if (onlyPendingOrAlerts) params.set("only_pending_or_alerts", "1");
 
       const [planilhaRes, alertsRes] = await Promise.all([
@@ -179,7 +178,7 @@ export default function PlanilhaPage() {
     } finally {
       setLoading(false);
     }
-  }, [router, year, month, onlyPendingOrAlerts]);
+  }, [router, year, onlyPendingOrAlerts]);
 
   React.useEffect(() => {
     void fetchAll();
@@ -328,8 +327,13 @@ export default function PlanilhaPage() {
   const visibleRows = React.useMemo(() => {
     if (!planilha) return [];
     const q = searchText.trim().toLowerCase();
+    const targetMonth = month !== "all" ? Number(month) : null;
     return planilha.rows
       .filter((row) => {
+        if (targetMonth !== null) {
+          const rowMonth = Number(row.reading_date.slice(5, 7));
+          if (rowMonth !== targetMonth) return false;
+        }
         if (onlyPendingOrAlerts) {
           if (!row.has_pending && !row.highest_alert_severity) return false;
         }
@@ -340,7 +344,7 @@ export default function PlanilhaPage() {
         return true;
       })
       .sort((a, b) => a.reading_date.localeCompare(b.reading_date));
-  }, [planilha, onlyPendingOrAlerts, searchText]);
+  }, [planilha, month, onlyPendingOrAlerts, searchText]);
 
   function handleExportCsv() {
     if (!planilha) return;
