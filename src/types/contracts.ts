@@ -520,10 +520,36 @@ export interface DashboardSectorShareDto {
   color: string;
 }
 
+export interface DashboardDailyPointDto {
+  day: number;
+  label: string;
+  date: string;
+  agua_geral_m3: number;
+  agua_geral_prev_m3: number;
+  agua_reuso_m3: number;
+  energia_total_kwh: number;
+  energia_total_prev_kwh: number;
+  bss1_kwh: number;
+  bss2_kwh: number;
+  bss3_kwh: number;
+  bss4_kwh: number;
+  cag_energia_kwh: number;
+  cag_energia_prev_kwh: number;
+  cag_agua_m3: number;
+  cag_agua_prev_m3: number;
+  cag_condutivimetro_avg: number | null;
+  temp_externa_avg: number | null;
+  temp_jockey_avg: number | null;
+  temp_guaiba_avg: number | null;
+  chiller1_motor_avg: number | null;
+  chiller2_motor_avg: number | null;
+}
+
 export interface DashboardResponse {
   available_years: number[];
   selected_year: number;
   previous_year: number;
+  selected_month: number | null;
   kpis: {
     agua_geral_m3: number;
     agua_geral_yoy_pct: number | null;
@@ -540,6 +566,7 @@ export interface DashboardResponse {
     critical_alerts: number;
   };
   monthly_series: DashboardMonthlyPointDto[];
+  daily_series: DashboardDailyPointDto[];
   annual_series: DashboardAnnualPointDto[];
   energy_sector_shares: DashboardSectorShareDto[];
   water_sector_shares: DashboardSectorShareDto[];

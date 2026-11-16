@@ -736,5 +736,13 @@ describe("API Route Contracts & RBAC (Local Mode)", () => {
     expect(Array.isArray(body.annual_series)).toBe(true);
     expect(body.energy_sector_shares.length).toBeGreaterThanOrEqual(4);
     expect(body.water_sector_shares.length).toBeGreaterThanOrEqual(4);
+
+    const monthRes = await getDashboard(
+      makeReq("/api/dashboard?year=2026&month=1", { role: "manager" }),
+    );
+    expect(monthRes.status).toBe(200);
+    const monthBody = await monthRes.json();
+    expect(monthBody.selected_month).toBe(1);
+    expect(monthBody.daily_series).toHaveLength(31);
   });
 });

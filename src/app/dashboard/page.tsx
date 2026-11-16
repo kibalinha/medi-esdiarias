@@ -32,6 +32,22 @@ const SECTOR_TABS: Array<{ value: SectorTab; label: string }> = [
   { value: "chillers", label: "Chillers" },
 ];
 
+const MONTHS_PT = [
+  { value: "all", label: "Todos os meses (Anual)" },
+  { value: "1", label: "Janeiro" },
+  { value: "2", label: "Fevereiro" },
+  { value: "3", label: "Março" },
+  { value: "4", label: "Abril" },
+  { value: "5", label: "Maio" },
+  { value: "6", label: "Junho" },
+  { value: "7", label: "Julho" },
+  { value: "8", label: "Agosto" },
+  { value: "9", label: "Setembro" },
+  { value: "10", label: "Outubro" },
+  { value: "11", label: "Novembro" },
+  { value: "12", label: "Dezembro" },
+];
+
 function YoyBadge({ pct }: { pct: number | null }) {
   if (pct === null) {
     return (
@@ -55,6 +71,7 @@ export default function DashboardPage() {
   const [auth, setAuth] = React.useState<AuthMeResponse | null>(null);
   const [data, setData] = React.useState<DashboardResponse | null>(null);
   const [selectedYear, setSelectedYear] = React.useState<string>("2026");
+  const [selectedMonth, setSelectedMonth] = React.useState<string>("all");
   const [sector, setSector] = React.useState<SectorTab>("all");
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -80,8 +97,10 @@ export default function DashboardPage() {
         return;
       }
 
+      const params = new URLSearchParams({ year: selectedYear });
+      if (selectedMonth !== "all") params.set("month", selectedMonth);
       const res = await fetch(
-        `/api/dashboard?year=${encodeURIComponent(selectedYear)}`,
+        `/api/dashboard?${params.toString()}`,
         { cache: "no-store" },
       );
       if (!res.ok) {
@@ -99,7 +118,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [router, selectedYear]);
+  }, [router, selectedYear, selectedMonth]);
 
   React.useEffect(() => {
     void loadDashboard();
@@ -114,7 +133,16 @@ export default function DashboardPage() {
     );
   }
 
-  const monthLabels = data?.monthly_series.map((m) => m.label) ?? [];
+  const isSingleMonth = data?.selected_month !== null && data?.selected_month !== undefined;
+  const activeMonthLabel =
+    MONTHS_PT.find((m) => m.value === String(data?.selected_month ?? ""))?.label ?? "";
+  const activeSeries = isSingleMonth
+    ? (data?.daily_series ?? [])
+    : (data?.monthly_series ?? []);
+  const seriesLabels = activeSeries.map((pt) => pt.label);
+  const scopeLabel = isSingleMonth
+    ? `${activeMonthLabel} de ${data?.selected_year}`
+    : `${data?.selected_year}`;
 
   return (
     <div className="min-h-dvh bg-slate-100">
@@ -140,7 +168,7 @@ export default function DashboardPage() {
                 htmlFor="dash-year"
                 className="text-xs font-medium text-slate-600"
               >
-                Ano base:
+                Ano:
               </label>
               <select
                 id="dash-year"
@@ -151,6 +179,25 @@ export default function DashboardPage() {
                 {(data?.available_years ?? [2026, 2025]).map((y) => (
                   <option key={y} value={String(y)}>
                     {y}
+                  </option>
+                ))}
+              </select>
+
+              <label
+                htmlFor="dash-month"
+                className="text-xs font-medium text-slate-600"
+              >
+                Mês:
+              </label>
+              <select
+                id="dash-month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-800"
+              >
+                {MONTHS_PT.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
                   </option>
                 ))}
               </select>
@@ -193,7 +240,7 @@ export default function DashboardPage() {
             <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-1">
                 <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>Água Geral ({data.selected_year})</span>
+                  <span>Água Geral ({scopeLabel})</span>
                   <Droplets className="h-4 w-4 text-sky-600" />
                 </div>
                 <div className="text-xl font-bold text-slate-900 tabular-nums">
@@ -204,7 +251,7 @@ export default function DashboardPage() {
 
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-1">
                 <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>Energia Total ({data.selected_year})</span>
+                  <span>Energia Total ({scopeLabel})</span>
                   <Zap className="h-4 w-4 text-amber-500" />
                 </div>
                 <div className="text-xl font-bold text-slate-900 tabular-nums">
@@ -215,7 +262,7 @@ export default function DashboardPage() {
 
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-1">
                 <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>CAG Energia ({data.selected_year})</span>
+                  <span>CAG Energia ({scopeLabel})</span>
                   <Flame className="h-4 w-4 text-teal-600" />
                 </div>
                 <div className="text-xl font-bold text-slate-900 tabular-nums">
@@ -270,14 +317,18 @@ export default function DashboardPage() {
             {(sector === "all" || sector === "agua") && (
               <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <GroupedBarChart
-                  title="Água Geral — Consumo Mensal"
+                  title={
+                    isSingleMonth
+                      ? `Água Geral — Consumo Diário (${activeMonthLabel})`
+                      : "Água Geral — Consumo Mensal"
+                  }
                   subtitle={`Comparativo ${data.selected_year} vs ${data.previous_year} (m³)`}
                   unit="m³"
                   primaryLabel={String(data.selected_year)}
                   secondaryLabel={String(data.previous_year)}
                   primaryColor="#0284c7"
                   secondaryColor="#cbd5e1"
-                  data={data.monthly_series.map((m) => ({
+                  data={activeSeries.map((m) => ({
                     label: m.label,
                     primary: m.agua_geral_m3,
                     secondary: m.agua_geral_prev_m3,
@@ -305,14 +356,18 @@ export default function DashboardPage() {
             {(sector === "all" || sector === "energia") && (
               <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <GroupedBarChart
-                  title="Energia Total (BSS 1–4) — Consumo Mensal"
+                  title={
+                    isSingleMonth
+                      ? `Energia Total (BSS 1–4) — Consumo Diário (${activeMonthLabel})`
+                      : "Energia Total (BSS 1–4) — Consumo Mensal"
+                  }
                   subtitle={`Comparativo ${data.selected_year} vs ${data.previous_year} (kWh)`}
                   unit="kWh"
                   primaryLabel={String(data.selected_year)}
                   secondaryLabel={String(data.previous_year)}
                   primaryColor="#f59e0b"
                   secondaryColor="#cbd5e1"
-                  data={data.monthly_series.map((m) => ({
+                  data={activeSeries.map((m) => ({
                     label: m.label,
                     primary: m.energia_total_kwh,
                     secondary: m.energia_total_prev_kwh,
@@ -320,34 +375,38 @@ export default function DashboardPage() {
                 />
 
                 <MultiLineChart
-                  title="Energia por Subestação (BSS 1 a 4) — Mensal"
-                  subtitle={`Evolução mensal em ${data.selected_year} (kWh)`}
+                  title={
+                    isSingleMonth
+                      ? `Energia por Subestação (BSS 1 a 4) — Diário (${activeMonthLabel})`
+                      : "Energia por Subestação (BSS 1 a 4) — Mensal"
+                  }
+                  subtitle={`Evolução em ${scopeLabel} (kWh)`}
                   unit="kWh"
-                  labels={monthLabels}
+                  labels={seriesLabels}
                   series={[
                     {
                       key: "bss1",
                       label: "BSS 1",
                       color: "#0284c7",
-                      values: data.monthly_series.map((m) => m.bss1_kwh),
+                      values: activeSeries.map((m) => m.bss1_kwh),
                     },
                     {
                       key: "bss2",
                       label: "BSS 2",
                       color: "#4f46e5",
-                      values: data.monthly_series.map((m) => m.bss2_kwh),
+                      values: activeSeries.map((m) => m.bss2_kwh),
                     },
                     {
                       key: "bss3",
                       label: "BSS 3",
                       color: "#7c3aed",
-                      values: data.monthly_series.map((m) => m.bss3_kwh),
+                      values: activeSeries.map((m) => m.bss3_kwh),
                     },
                     {
                       key: "bss4",
                       label: "BSS 4",
                       color: "#0d9488",
-                      values: data.monthly_series.map((m) => m.bss4_kwh),
+                      values: activeSeries.map((m) => m.bss4_kwh),
                     },
                   ]}
                 />
@@ -373,13 +432,13 @@ export default function DashboardPage() {
                 />
 
                 <SectorShareBars
-                  title={`Participação de Energia (${data.selected_year})`}
+                  title={`Participação de Energia (${scopeLabel})`}
                   subtitle="Distribuição por subestação BSS 1–4 e CAG"
                   items={data.energy_sector_shares}
                 />
 
                 <SectorShareBars
-                  title={`Participação de Água (${data.selected_year})`}
+                  title={`Participação de Água (${scopeLabel})`}
                   subtitle="Consumo por ponto hidráulico (m³)"
                   items={data.water_sector_shares}
                 />
@@ -390,14 +449,18 @@ export default function DashboardPage() {
             {(sector === "all" || sector === "cag") && (
               <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <GroupedBarChart
-                  title="CAG — Energia Mensal (kWh)"
+                  title={
+                    isSingleMonth
+                      ? `CAG — Energia Diária (${activeMonthLabel}) (kWh)`
+                      : "CAG — Energia Mensal (kWh)"
+                  }
                   subtitle={`Comparativo ${data.selected_year} vs ${data.previous_year}`}
                   unit="kWh"
                   primaryLabel={String(data.selected_year)}
                   secondaryLabel={String(data.previous_year)}
                   primaryColor="#0d9488"
                   secondaryColor="#cbd5e1"
-                  data={data.monthly_series.map((m) => ({
+                  data={activeSeries.map((m) => ({
                     label: m.label,
                     primary: m.cag_energia_kwh,
                     secondary: m.cag_energia_prev_kwh,
@@ -405,14 +468,18 @@ export default function DashboardPage() {
                 />
 
                 <GroupedBarChart
-                  title="CAG — Água de Reposição Mensal (m³)"
+                  title={
+                    isSingleMonth
+                      ? `CAG — Água de Reposição Diária (${activeMonthLabel}) (m³)`
+                      : "CAG — Água de Reposição Mensal (m³)"
+                  }
                   subtitle={`Comparativo ${data.selected_year} vs ${data.previous_year}`}
                   unit="m³"
                   primaryLabel={String(data.selected_year)}
                   secondaryLabel={String(data.previous_year)}
                   primaryColor="#6366f1"
                   secondaryColor="#cbd5e1"
-                  data={data.monthly_series.map((m) => ({
+                  data={activeSeries.map((m) => ({
                     label: m.label,
                     primary: m.cag_agua_m3,
                     secondary: m.cag_agua_prev_m3,
@@ -425,30 +492,32 @@ export default function DashboardPage() {
             {(sector === "all" || sector === "temperaturas") && (
               <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <MultiLineChart
-                  title={`Temperaturas Médias Mensais (${data.selected_year})`}
+                  title={
+                    isSingleMonth
+                      ? `Temperaturas Diárias (${scopeLabel})`
+                      : `Temperaturas Médias Mensais (${data.selected_year})`
+                  }
                   subtitle="Externa vs Nível Joquey vs Nível Guaíba (°C)"
                   unit="°C"
-                  labels={monthLabels}
+                  labels={seriesLabels}
                   series={[
                     {
                       key: "ext",
                       label: "Externa",
                       color: "#f97316",
-                      values: data.monthly_series.map(
-                        (m) => m.temp_externa_avg,
-                      ),
+                      values: activeSeries.map((m) => m.temp_externa_avg),
                     },
                     {
                       key: "jockey",
                       label: "Nível Joquey",
                       color: "#0284c7",
-                      values: data.monthly_series.map((m) => m.temp_jockey_avg),
+                      values: activeSeries.map((m) => m.temp_jockey_avg),
                     },
                     {
                       key: "guaiba",
                       label: "Nível Guaíba",
                       color: "#10b981",
-                      values: data.monthly_series.map((m) => m.temp_guaiba_avg),
+                      values: activeSeries.map((m) => m.temp_guaiba_avg),
                     },
                   ]}
                 />
@@ -474,43 +543,45 @@ export default function DashboardPage() {
             {(sector === "all" || sector === "chillers") && (
               <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <MultiLineChart
-                  title={`Chillers 1 e 2 — Carga Média do Motor (${data.selected_year})`}
-                  subtitle="Percentual médio mensal (%)"
+                  title={
+                    isSingleMonth
+                      ? `Chillers 1 e 2 — Carga Diária do Motor (${scopeLabel})`
+                      : `Chillers 1 e 2 — Carga Média do Motor (${data.selected_year})`
+                  }
+                  subtitle="Percentual do motor (%)"
                   unit="%"
-                  labels={monthLabels}
+                  labels={seriesLabels}
                   series={[
                     {
                       key: "c1",
                       label: "Chiller 1 (%)",
                       color: "#06b6d4",
-                      values: data.monthly_series.map(
-                        (m) => m.chiller1_motor_avg,
-                      ),
+                      values: activeSeries.map((m) => m.chiller1_motor_avg),
                     },
                     {
                       key: "c2",
                       label: "Chiller 2 (%)",
                       color: "#6366f1",
-                      values: data.monthly_series.map(
-                        (m) => m.chiller2_motor_avg,
-                      ),
+                      values: activeSeries.map((m) => m.chiller2_motor_avg),
                     },
                   ]}
                 />
 
                 <MultiLineChart
-                  title={`CAG — Condutivímetro Médio Mensal (${data.selected_year})`}
+                  title={
+                    isSingleMonth
+                      ? `CAG — Condutivímetro Diário (${scopeLabel})`
+                      : `CAG — Condutivímetro Médio Mensal (${data.selected_year})`
+                  }
                   subtitle="Referência: < 700 OK | 700–1000 Alto | > 1000 Crítico (µS/cm)"
                   unit="µS/cm"
-                  labels={monthLabels}
+                  labels={seriesLabels}
                   series={[
                     {
                       key: "cond",
                       label: "Condutivímetro",
                       color: "#e11d48",
-                      values: data.monthly_series.map(
-                        (m) => m.cag_condutivimetro_avg,
-                      ),
+                      values: activeSeries.map((m) => m.cag_condutivimetro_avg),
                     },
                   ]}
                 />
