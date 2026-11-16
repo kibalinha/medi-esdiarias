@@ -467,3 +467,80 @@ export interface ApiErrorResponse {
   code?: string;
   details?: unknown;
 }
+
+export interface DashboardMonthlyPointDto {
+  month: number;
+  label: string;
+  agua_geral_m3: number;
+  agua_geral_prev_m3: number;
+  agua_reuso_m3: number;
+  agua_muro_verde_m3: number;
+  agua_calcadao_m3: number;
+  energia_total_kwh: number;
+  energia_total_prev_kwh: number;
+  bss1_kwh: number;
+  bss2_kwh: number;
+  bss3_kwh: number;
+  bss4_kwh: number;
+  cag_energia_kwh: number;
+  cag_energia_prev_kwh: number;
+  cag_agua_m3: number;
+  cag_agua_prev_m3: number;
+  cag_condutivimetro_avg: number | null;
+  temp_externa_avg: number | null;
+  temp_jockey_avg: number | null;
+  temp_guaiba_avg: number | null;
+  chiller1_motor_avg: number | null;
+  chiller2_motor_avg: number | null;
+}
+
+export interface DashboardAnnualPointDto {
+  year: number;
+  agua_geral_m3: number;
+  agua_reuso_m3: number;
+  agua_muro_verde_m3: number;
+  agua_calcadao_m3: number;
+  energia_total_kwh: number;
+  bss1_kwh: number;
+  bss2_kwh: number;
+  bss3_kwh: number;
+  bss4_kwh: number;
+  cag_energia_kwh: number;
+  cag_agua_m3: number;
+  temp_externa_avg: number | null;
+  temp_jockey_avg: number | null;
+  temp_guaiba_avg: number | null;
+}
+
+export interface DashboardSectorShareDto {
+  key: string;
+  label: string;
+  value: number;
+  unit: string;
+  color: string;
+}
+
+export interface DashboardResponse {
+  available_years: number[];
+  selected_year: number;
+  previous_year: number;
+  kpis: {
+    agua_geral_m3: number;
+    agua_geral_yoy_pct: number | null;
+    energia_total_kwh: number;
+    energia_total_yoy_pct: number | null;
+    cag_energia_kwh: number;
+    cag_energia_yoy_pct: number | null;
+    cag_agua_m3: number;
+    cag_agua_yoy_pct: number | null;
+    temp_externa_avg: number | null;
+    temp_jockey_avg: number | null;
+    temp_guaiba_avg: number | null;
+    unacknowledged_alerts: number;
+    critical_alerts: number;
+  };
+  monthly_series: DashboardMonthlyPointDto[];
+  annual_series: DashboardAnnualPointDto[];
+  energy_sector_shares: DashboardSectorShareDto[];
+  water_sector_shares: DashboardSectorShareDto[];
+}

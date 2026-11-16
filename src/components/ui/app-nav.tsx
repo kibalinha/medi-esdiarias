@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  BarChart3,
   ClipboardList,
   LogOut,
   Settings,
@@ -44,6 +45,12 @@ export function AppNav({ user }: AppNavProps) {
       href: "/planilha",
       label: "Planilha",
       icon: Table2,
+      visible: isManager,
+    },
+    {
+      href: "/dashboard",
+      label: "Dashboard",
+      icon: BarChart3,
       visible: isManager,
     },
     {

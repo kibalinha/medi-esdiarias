@@ -24,6 +24,7 @@ vi.mock("next/headers", () => ({
 import { resetLocalDbForTests } from "@/lib/supabase/local-store";
 import { GET as getAuthMe, POST as postAuthMe } from "@/app/api/auth/me/route";
 import { GET as getBiMedicoes } from "@/app/api/bi/medicoes/route";
+import { GET as getDashboard } from "@/app/api/dashboard/route";
 import { GET as getCampoBootstrap } from "@/app/api/campo/bootstrap/route";
 import { POST as postOcrExtract } from "@/app/api/ocr/extract/route";
 import { POST as postSyncBatch } from "@/app/api/sync/batch/route";
@@ -717,5 +718,23 @@ describe("API Route Contracts & RBAC (Local Mode)", () => {
       if (prevKey === undefined) delete process.env.BI_API_KEY;
       else process.env.BI_API_KEY = prevKey;
     }
+  });
+
+  it("GET /api/dashboard rejects technicians (403) and returns monthly & annual series for managers", async () => {
+    const techRes = await getDashboard(
+      makeReq("/api/dashboard?year=2026", { role: "technician" }),
+    );
+    expect(techRes.status).toBe(403);
+
+    const mgrRes = await getDashboard(
+      makeReq("/api/dashboard?year=2026", { role: "manager" }),
+    );
+    expect(mgrRes.status).toBe(200);
+    const body = await mgrRes.json();
+    expect(body.selected_year).toBe(2026);
+    expect(body.monthly_series).toHaveLength(12);
+    expect(Array.isArray(body.annual_series)).toBe(true);
+    expect(body.energy_sector_shares.length).toBeGreaterThanOrEqual(4);
+    expect(body.water_sector_shares.length).toBeGreaterThanOrEqual(4);
   });
 });
